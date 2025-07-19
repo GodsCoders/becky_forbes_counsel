@@ -9,6 +9,14 @@ import (
 )
 
 func main() {
+	/*
+		TODO
+		- move css to own file
+		- templatize menu
+		- pick out some decent Google fonts
+		- create hierarchy of pages and components
+	*/
+
 	// Initialize the server with options
 	s := rweb.NewServer(rweb.ServerOptions{
 		Address: ":8080",
@@ -20,37 +28,17 @@ func main() {
 	s.ElementDebugRoutes()
 
 	// Define routes
-	s.Get("/", rootHandler)
-	s.Get("/about", aboutHandler)
-	s.Get("/contact", contactHandler)
+	s.Get("/", homeHandler)
 
 	log.Println("Starting server on http://localhost:8080")
 	log.Fatal(s.Run())
 }
 
-// rootHandler serves the home page
-func rootHandler(c rweb.Context) error {
+// homeHandler serves the home page
+func homeHandler(c rweb.Context) error {
 	err := c.WriteHTML(generateHomePage())
 	if err != nil {
 		return serr.Wrap(err, "failed to write home page HTML")
-	}
-	return nil
-}
-
-// aboutHandler serves the about page
-func aboutHandler(c rweb.Context) error {
-	err := c.WriteHTML(generateAboutPage())
-	if err != nil {
-		return serr.Wrap(err, "failed to write about page HTML")
-	}
-	return nil
-}
-
-// contactHandler serves the contact page
-func contactHandler(c rweb.Context) error {
-	err := c.WriteHTML(generateContactPage())
-	if err != nil {
-		return serr.Wrap(err, "failed to write contact page HTML")
 	}
 	return nil
 }
@@ -61,167 +49,223 @@ func generateHomePage() string {
 
 	b.Html().R(
 		b.Head().R(
-			b.Title().T("Welcome - My Basic Website"),
+			b.Meta("charset", "UTF-8"),
+			b.Title().T("Becky Forbes Counseling - Find Strength, Healing, and Hope"),
+			b.Meta("name", "viewport", "content", "width=device-width, initial-scale=1.0"),
+			b.Link("rel", "preconnect", "href", "https://fonts.googleapis.com"),
+			b.Link("rel", "preconnect", "href", "https://fonts.gstatic.com", "crossorigin", ""),
+			b.Link("href", "https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap", "rel", "stylesheet"),
 			b.Style().T(getStyles()),
 		),
 		b.Body().R(
-			// Navigation component
-			navigationComponent{}.Render(b),
+			// Navigation
+			element.RenderComponents(b, navigationComponent{}),
 
-			// Main content
-			b.DivClass("container").R(
-				b.H1().T("Welcome to My Website"),
-				b.DivClass("content").R(
-					b.P().T("This is a basic website built with Go using the rweb server and element HTML generation library."),
-					b.P().T("Explore our pages to learn more about what we offer."),
+			// Hero Section
+			element.RenderComponents(b, heroComponent{}),
 
-					// Feature cards
-					b.DivClass("features").R(
-						b.DivClass("card").R(
-							b.H3().T("Fast & Efficient"),
-							b.P().T("Built with Go for optimal performance and resource efficiency."),
-						),
-						b.DivClass("card").R(
-							b.H3().T("Clean Code"),
-							b.P().T("Using element library for type-safe HTML generation with a code-first approach."),
-						),
-						b.DivClass("card").R(
-							b.H3().T("Modern Design"),
-							b.P().T("Simple, responsive design that works on all devices."),
-						),
-					),
-				),
-			),
+			// Sarah's Counseling Philosophy Section
+			element.RenderComponents(b, philosophyComponent{}),
+
+			// Benefits of Therapy Section
+			element.RenderComponents(b, benefitsComponent{}),
+
+			// Call to Action Section
+			element.RenderComponents(b, ctaComponent{}),
 
 			// Footer
-			footerComponent{}.Render(b),
+			element.RenderComponents(b, footerComponent{}),
 		),
 	)
 
 	return b.String()
 }
 
-// generateAboutPage creates the HTML for the about page
-func generateAboutPage() string {
-	b := element.NewBuilder()
-
-	b.Html().R(
-		b.Head().R(
-			b.Title().T("About - My Basic Website"),
-			b.Style().T(getStyles()),
-		),
-		b.Body().R(
-			navigationComponent{}.Render(b),
-
-			b.DivClass("container").R(
-				b.H1().T("About Us"),
-				b.DivClass("content").R(
-					b.P().T("We are passionate about creating efficient web applications using modern Go technologies."),
-					b.H2().T("Our Mission"),
-					b.P().T("To demonstrate the power and simplicity of building web applications with Go, showcasing clean code practices and efficient server-side rendering."),
-					b.H2().T("Technologies We Use"),
-					b.Ul().R(
-						b.Li().T("Go Programming Language"),
-						b.Li().T("rweb - Lightweight web server framework"),
-						b.Li().T("element - Type-safe HTML generation library"),
-						b.Li().T("serr - Error handling library"),
-					),
-				),
-			),
-
-			footerComponent{}.Render(b),
-		),
-	)
-
-	return b.String()
-}
-
-// generateContactPage creates the HTML for the contact page
-func generateContactPage() string {
-	b := element.NewBuilder()
-
-	b.Html().R(
-		b.Head().R(
-			b.Title().T("Contact - My Basic Website"),
-			b.Style().T(getStyles()),
-		),
-		b.Body().R(
-			navigationComponent{}.Render(b),
-
-			b.DivClass("container").R(
-				b.H1().T("Contact Us"),
-				b.DivClass("content").R(
-					b.P().T("Get in touch with us through the following channels:"),
-					b.DivClass("contact-info").R(
-						b.P().R(
-							b.Strong().T("Email: "),
-							b.T("info@example.com"),
-						),
-						b.P().R(
-							b.Strong().T("Phone: "),
-							b.T("+1 (555) 123-4567"),
-						),
-						b.P().R(
-							b.Strong().T("Address: "),
-							b.T("123 Main Street, City, State 12345"),
-						),
-					),
-
-					// Simple contact form
-					b.H2().T("Send us a message"),
-					b.Form("method", "post", "action", "#").R(
-						b.DivClass("form-group").R(
-							b.Label("for", "name").T("Name:"),
-							b.Input("type", "text", "id", "name", "name", "name", "required", "required"),
-						),
-						b.DivClass("form-group").R(
-							b.Label("for", "email").T("Email:"),
-							b.Input("type", "email", "id", "email", "name", "email", "required", "required"),
-						),
-						b.DivClass("form-group").R(
-							b.Label("for", "message").T("Message:"),
-							b.TextArea("id", "message", "name", "message", "rows", "5", "required", "required").R(),
-						),
-						b.Button("type", "submit").T("Send Message"),
-					),
-				),
-			),
-
-			footerComponent{}.Render(b),
-		),
-	)
-
-	return b.String()
-}
-
-// navigationComponent is a reusable navigation bar
+// navigationComponent creates the navigation bar
 type navigationComponent struct{}
 
 func (n navigationComponent) Render(b *element.Builder) (x any) {
 	b.Nav().R(
 		b.DivClass("nav-container").R(
-			b.DivClass("logo").T("My Website"),
-			b.Ul().R(
-				b.Li().R(b.A("href", "/").T("Home")),
-				b.Li().R(b.A("href", "/about").T("About")),
-				b.Li().R(b.A("href", "/contact").T("Contact")),
+			// Logo
+			b.DivClass("logo").R(
+				b.Img("src", "/logo.png", "alt", "Becky Forbes Counseling"),
+			),
+			// Navigation menu
+			b.DivClass("nav-menu").R(
+				b.A("href", "/", "class", "active").T("Home"),
+				b.A("href", "/about").T("About"),
+				b.DivClass("dropdown").R(
+					b.A("href", "/services", "class", "dropdown-toggle").R(
+						b.T("Services "),
+						b.Span().T("▾"),
+					),
+					b.DivClass("dropdown-content").R(
+						b.A("href", "/individual-counseling").T("Individual Counseling"),
+						b.A("href", "/couples-counseling").T("Couples Counseling"),
+						b.A("href", "/emdr-therapy").T("EMDR Therapy"),
+						b.A("href", "/career-counseling").T("Career Counseling"),
+						b.A("href", "/anger-management-individual").T("Anger Management Individual Counseling"),
+						b.A("href", "/anger-management").T("Anger Management"),
+					),
+				),
+				b.A("href", "/fees").T("Fees"),
+				b.A("href", "/faqs").T("FAQS"),
+				b.A("href", "/contact").T("Contact"),
+				b.A("href", "/resources").T("Resources"),
 			),
 		),
 	)
 	return
 }
 
-// footerComponent is a reusable footer
+// heroComponent creates the hero section with background image
+type heroComponent struct{}
+
+func (h heroComponent) Render(b *element.Builder) (x any) {
+	b.DivClass("hero-section").R(
+		b.DivClass("hero-content").R(
+			b.H1().T("Find Strength, Healing, and Hope"),
+			b.P().T("Becky Forbes Counseling"),
+			b.A("href", "/contact", "class", "btn btn-primary").T("Get In Touch"),
+		),
+	)
+	return
+}
+
+// philosophyComponent creates the Sarah's Counseling Philosophy section
+type philosophyComponent struct{}
+
+func (p philosophyComponent) Render(b *element.Builder) (x any) {
+	b.Section("class", "philosophy-section").R(
+		b.DivClass("container").R(
+			b.DivClass("philosophy-content").R(
+				b.DivClass("philosophy-image").R(
+					b.Img("src", "/sarah-photo.jpg", "alt", "Sarah Rhoten"),
+				),
+				b.DivClass("philosophy-text").R(
+					b.H2().T("Sarah's Counseling Philosophy"),
+					b.P().T("As a therapist, I seek to empower my clients with the knowledge that they hold the key to their well-being and help them develop the skills they need to access this ability on a daily basis. My compassion, empathy, and love of people along with my own life journey is what compelled me to enter the field of counseling. My primary theoretical model is Cognitive Behavioral Therapy (CBT), combined with faith-based counseling. My counseling philosophy is from a holistic point of view addressing the mental, physical, and spiritual aspects of a person. I also believe therapy must be tailored to the individual as no two people are the same. I prefer to use a client-centered collaborative approach, focusing on individuals strengths to create positive change and personal growth."),
+				),
+			),
+		),
+	)
+	return
+}
+
+// benefitsComponent creates the Benefits of Therapy section
+type benefitsComponent struct{}
+
+func (ben benefitsComponent) Render(b *element.Builder) (x any) {
+	b.Section("class", "benefits-section").R(
+		b.DivClass("container").R(
+			b.H2().T("Benefits of Therapy"),
+			b.DivClass("benefits-grid").R(
+				// Mental Health column
+				b.DivClass("benefit-column").R(
+					b.H3().T("Mental Health"),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Self-awareness- Therapy can help you understand your thoughts, emotions, and behaviors, and how they may be affecting your life."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Self-esteem- Therapy can help you feel more confident and accept yourself, even if you have negative thoughts about yourself."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Stress management- Therapy can teach you effective ways to manage stress, which can improve your sleep, reduce blood pressure, and strengthen your immune system."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Trauma- Therapy can help you make sense of past trauma and overcome fears."),
+					),
+				),
+				// Physical Health column
+				b.DivClass("benefit-column").R(
+					b.H3().T("Physical Health"),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Boost immune system- Therapy can improve your overall health. People with mental health issues such as anxiety and depression often have compromised immune systems. Seeking help for your mental health can help you live a healthier and longer life."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Pain relief- Therapy can help reduce pain."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Improved sleep- Therapy can help you sleep better and is proven to be helpful with those suffering from insomnia."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Reduced risk of heart disease- Therapy can help reduce mental exhaustion, which can reduce stress throughout your body and potentially reduce the risk of heart disease."),
+					),
+				),
+				// Interpersonal Relationships/Life Changes column
+				b.DivClass("benefit-column").R(
+					b.H3().T("Interpersonal Relationships/Life Changes"),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Stronger relationships- Therapy can help improve relationships by providing individuals with the tools to communicate more effectively, set healthy boundaries, and work through conflicts."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Communication skills- Therapy can help you identify communication issues and develop skills to articulate your needs, listen actively, set healthy boundaries, and resolve conflicts."),
+					),
+					b.DivClass("benefit-item").R(
+						b.Span("class", "checkmark").T("✓"),
+						b.P().T("Life transitions- Therapy can help you adapt to life transitions, such as moving out, getting married, divorce/ending a relationship, job/career changes, death/loss."),
+					),
+				),
+			),
+		),
+	)
+	return
+}
+
+// ctaComponent creates the call to action section
+type ctaComponent struct{}
+
+func (c ctaComponent) Render(b *element.Builder) (x any) {
+	b.Section("class", "cta-section").R(
+		b.DivClass("container").R(
+			b.H2().T("Start your journey today"),
+			b.H3().T("with Becky Forbes Counseling"),
+			b.A("href", "/contact", "class", "btn btn-secondary").T("Schedule Now"),
+		),
+	)
+	return
+}
+
+// footerComponent creates the footer
 type footerComponent struct{}
 
 func (f footerComponent) Render(b *element.Builder) (x any) {
 	b.Footer().R(
 		b.DivClass("footer-content").R(
-			b.P().T("© 2024 My Basic Website. All rights reserved."),
-			b.P().R(
-				b.A("href", "#").T("Privacy Policy"),
-				b.T(" | "),
-				b.A("href", "#").T("Terms of Service"),
+			b.DivClass("footer-section").R(
+				b.P().T("✉ counseling@sarahrhoten.com"),
+				b.P().T("☎ 817-123-4567"),
+				b.P().T("☎ 817-890-1234"),
+			),
+			b.DivClass("footer-section").R(
+				b.DivClass("social-links").R(
+					b.A("href", "#", "class", "social-link").T("Instagram"),
+					b.A("href", "#", "class", "social-link").T("LinkedIn"),
+				),
+			),
+			b.DivClass("footer-section").R(
+				b.Img("src", "/footer-logo.png", "alt", "Becky Forbes Counseling", "class", "footer-logo"),
+			),
+		),
+		b.DivClass("footer-bottom").R(
+			b.DivClass("container").R(
+				b.P().T("Copyright © 2025 Becky Forbes Counseling. All rights reserved."),
+				b.DivClass("footer-links").R(
+					b.A("href", "/privacy").T("Privacy Policy"),
+					b.T(" | "),
+					b.A("href", "/terms").T("Terms & Conditions"),
+				),
 			),
 		),
 	)
@@ -230,7 +274,37 @@ func (f footerComponent) Render(b *element.Builder) (x any) {
 
 // getStyles returns the CSS styles for the website
 func getStyles() string {
+	// Design system colors matching the screenshot
 	return `
+		/* CSS Variables for theme colors */
+		:root {
+			/* Primary colors */
+			--color-primary: #5a9e82;
+			--color-primary-rgb: 90, 158, 130;
+			
+			/* Secondary colors */
+			--color-secondary: #f0c419;
+			--color-secondary-hover: #d4ab17;
+			
+			/* Text colors */
+			--color-text-primary: #333;
+			--color-text-secondary: #555;
+			--color-text-light: #fff;
+			
+			/* Background colors */
+			--color-bg-primary: #fff;
+			--color-bg-secondary: #f8f9fa;
+			--color-bg-tertiary: #f5f5f5;
+			
+			/* Shadow colors */
+			--shadow-light: rgba(0, 0, 0, 0.1);
+			--shadow-medium: rgba(0, 0, 0, 0.2);
+			--shadow-dark: rgba(0, 0, 0, 0.4);
+			
+			/* Overlay opacity */
+			--overlay-opacity: 0.9;
+		}
+
 		/* Reset and base styles */
 		* {
 			margin: 0;
@@ -239,18 +313,20 @@ func getStyles() string {
 		}
 
 		body {
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 			line-height: 1.6;
-			color: #333;
-			background-color: #f5f5f5;
+			color: var(--color-text-primary);
+			background-color: var(--color-bg-primary);
 		}
 
 		/* Navigation styles */
 		nav {
-			background-color: #2c3e50;
-			color: white;
+			background-color: var(--color-bg-primary);
 			padding: 1rem 0;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			box-shadow: 0 2px 4px var(--shadow-light);
+			position: sticky;
+			top: 0;
+			z-index: 100;
 		}
 
 		.nav-container {
@@ -262,187 +338,423 @@ func getStyles() string {
 			align-items: center;
 		}
 
-		.logo {
-			font-size: 1.5rem;
-			font-weight: bold;
+		.logo img {
+			height: 60px;
+			width: auto;
 		}
 
-		nav ul {
-			list-style: none;
+		.nav-menu {
 			display: flex;
 			gap: 2rem;
+			align-items: center;
 		}
 
-		nav a {
-			color: white;
+		.nav-menu > a,
+		.nav-menu .dropdown > a {
+			color: var(--color-text-primary);
 			text-decoration: none;
-			transition: opacity 0.3s;
+			font-weight: 500;
+			transition: all 0.3s ease;
+			position: relative;
+			padding-bottom: 0.5rem;
 		}
 
-		nav a:hover {
-			opacity: 0.8;
+		/* Cool underline effect */
+		.nav-menu > a::after,
+		.nav-menu .dropdown > a::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 50%;
+			width: 0;
+			height: 3px;
+			background: var(--color-secondary);
+			transition: all 0.3s ease;
+			transform: translateX(-50%);
+			border-radius: 2px;
+			box-shadow: 0 0 0 rgba(240, 196, 25, 0);
 		}
 
-		/* Container and content */
+		.nav-menu > a:hover::after,
+		.nav-menu .dropdown:hover > a::after {
+			width: 100%;
+			box-shadow: 0 2px 8px rgba(240, 196, 25, 0.4);
+		}
+
+		/* Active menu item */
+		.nav-menu > a.active::after,
+		.nav-menu .dropdown > a.active::after {
+			width: 100%;
+			background: var(--color-secondary);
+			box-shadow: 0 2px 12px rgba(240, 196, 25, 0.6);
+			animation: glow 2s ease-in-out infinite;
+		}
+
+		@keyframes glow {
+			0%, 100% {
+				box-shadow: 0 2px 12px rgba(240, 196, 25, 0.6);
+			}
+			50% {
+				box-shadow: 0 2px 20px rgba(240, 196, 25, 0.8);
+			}
+		}
+
+		.nav-menu > a:hover,
+		.nav-menu .dropdown > a:hover {
+			color: var(--color-primary);
+			transform: translateY(-2px);
+		}
+
+		/* Dropdown menu styles */
+		.dropdown {
+			position: relative;
+		}
+
+		.dropdown-content {
+			display: none;
+			position: absolute;
+			background-color: var(--color-bg-primary);
+			min-width: 280px;
+			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+			z-index: 1000;
+			border-radius: 8px;
+			top: calc(100% + 0.5rem);
+			left: 0;
+			padding: 0.5rem;
+			margin-top: -0.5rem;
+			border: 1px solid rgba(90, 158, 130, 0.1);
+		}
+
+		.dropdown:hover .dropdown-content {
+			display: block;
+		}
+
+		/* Keep dropdown open when hovering over submenu items */
+		.dropdown-content:hover {
+			display: block;
+		}
+
+		/* Add invisible bridge to prevent gap */
+		.dropdown::after {
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 0;
+			right: 0;
+			height: 0.5rem;
+			display: none;
+		}
+
+		.dropdown:hover::after {
+			display: block;
+		}
+
+		.dropdown-content a {
+			display: block;
+			padding: 0.75rem 1rem;
+			transition: all 0.3s ease;
+			border-radius: 6px;
+			margin: 0.2rem 0;
+			color: var(--color-text-primary);
+			text-decoration: none;
+			font-weight: 400;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.dropdown-content a::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 3px;
+			height: 0;
+			background-color: var(--color-secondary);
+			transition: height 0.3s ease;
+		}
+
+		.dropdown-content a:hover {
+			background-color: rgba(90, 158, 130, 0.1);
+			padding-left: 1.5rem;
+			color: var(--color-primary);
+		}
+
+		.dropdown-content a:hover::before {
+			height: 70%;
+		}
+
+		/* Hero section styles */
+		.hero-section {
+			background: linear-gradient(var(--shadow-dark), var(--shadow-dark)), url('/hero-bg.jpg');
+			background-size: cover;
+			background-position: center;
+			background-attachment: fixed;
+			min-height: 600px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			color: var(--color-text-light);
+		}
+
+		.hero-content h1 {
+			font-size: 3rem;
+			margin-bottom: 1rem;
+			font-weight: 300;
+			letter-spacing: 1px;
+		}
+
+		.hero-content p {
+			font-size: 1.5rem;
+			margin-bottom: 2rem;
+			font-weight: 300;
+		}
+
+		/* Button styles */
+		.btn {
+			display: inline-block;
+			padding: 1rem 2.5rem;
+			text-decoration: none;
+			border-radius: 4px;
+			transition: all 0.3s;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+
+		.btn-primary {
+			background-color: var(--color-secondary);
+			color: var(--color-text-primary);
+		}
+
+		.btn-primary:hover {
+			background-color: var(--color-secondary-hover);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px var(--shadow-medium);
+		}
+
+		.btn-secondary {
+			background-color: var(--color-secondary);
+			color: var(--color-text-primary);
+			padding: 1.2rem 3rem;
+			font-size: 1.1rem;
+		}
+
+		.btn-secondary:hover {
+			background-color: var(--color-secondary-hover);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px var(--shadow-medium);
+		}
+
+		/* Container */
 		.container {
 			max-width: 1200px;
 			margin: 0 auto;
-			padding: 2rem;
-			min-height: calc(100vh - 200px);
+			padding: 0 2rem;
 		}
 
-		h1 {
-			color: #2c3e50;
-			margin-bottom: 2rem;
-			font-size: 2.5rem;
+		/* Philosophy section */
+		.philosophy-section {
+			padding: 5rem 0;
+			background-color: var(--color-bg-secondary);
 		}
 
-		h2 {
-			color: #34495e;
-			margin: 2rem 0 1rem;
-			font-size: 2rem;
-		}
-
-		h3 {
-			color: #34495e;
-			margin-bottom: 0.5rem;
-		}
-
-		.content {
-			background: white;
-			padding: 2rem;
-			border-radius: 8px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		}
-
-		p {
-			margin-bottom: 1rem;
-		}
-
-		/* Feature cards */
-		.features {
+		.philosophy-content {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-			gap: 2rem;
-			margin-top: 2rem;
+			grid-template-columns: 300px 1fr;
+			gap: 3rem;
+			align-items: start;
 		}
 
-		.card {
-			background: #f8f9fa;
-			padding: 1.5rem;
-			border-radius: 8px;
-			border: 1px solid #e9ecef;
-			transition: transform 0.3s, box-shadow 0.3s;
-		}
-
-		.card:hover {
-			transform: translateY(-4px);
-			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-		}
-
-		/* Contact form */
-		.contact-info {
-			background: #f8f9fa;
-			padding: 1.5rem;
-			border-radius: 8px;
-			margin-bottom: 2rem;
-		}
-
-		form {
-			margin-top: 1rem;
-		}
-
-		.form-group {
-			margin-bottom: 1.5rem;
-		}
-
-		label {
-			display: block;
-			margin-bottom: 0.5rem;
-			font-weight: bold;
-			color: #555;
-		}
-
-		input, textarea {
+		.philosophy-image img {
 			width: 100%;
-			padding: 0.75rem;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-			font-size: 1rem;
-			font-family: inherit;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px var(--shadow-light);
 		}
 
-		input:focus, textarea:focus {
-			outline: none;
-			border-color: #3498db;
-			box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+		.philosophy-text h2 {
+			color: var(--color-primary);
+			font-size: 2.5rem;
+			margin-bottom: 1.5rem;
+			font-style: italic;
+			font-weight: 400;
 		}
 
-		button {
-			background-color: #3498db;
-			color: white;
-			padding: 0.75rem 2rem;
-			border: none;
-			border-radius: 4px;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: background-color 0.3s;
+		.philosophy-text p {
+			font-size: 1.1rem;
+			line-height: 1.8;
+			color: var(--color-text-secondary);
 		}
 
-		button:hover {
-			background-color: #2980b9;
+		/* Benefits section */
+		.benefits-section {
+			padding: 5rem 0;
+			background-color: var(--color-bg-primary);
 		}
 
-		/* Lists */
-		ul {
-			margin: 1rem 0 1rem 2rem;
+		.benefits-section h2 {
+			text-align: center;
+			color: var(--color-primary);
+			font-size: 2.5rem;
+			margin-bottom: 3rem;
+			font-style: italic;
+			font-weight: 400;
+		}
+
+		.benefits-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 3rem;
+		}
+
+		.benefit-column h3 {
+			color: var(--color-primary);
+			font-size: 1.5rem;
+			margin-bottom: 1.5rem;
+			padding-bottom: 1rem;
+			border-bottom: 2px solid var(--color-primary);
+		}
+
+		.benefit-item {
+			display: flex;
+			align-items: start;
+			margin-bottom: 1.5rem;
+			gap: 1rem;
+		}
+
+		.checkmark {
+			color: var(--color-primary);
+			font-size: 1.2rem;
+			flex-shrink: 0;
+			margin-top: 0.2rem;
+		}
+
+		.benefit-item p {
+			font-size: 0.95rem;
+			line-height: 1.6;
+			color: var(--color-text-secondary);
+		}
+
+		/* CTA section */
+		.cta-section {
+			padding: 5rem 0;
+			background: linear-gradient(rgba(var(--color-primary-rgb), var(--overlay-opacity)), rgba(var(--color-primary-rgb), var(--overlay-opacity))), url('/cta-bg.jpg');
+			background-size: cover;
+			background-position: center;
+			text-align: center;
+			color: var(--color-text-light);
+		}
+
+		.cta-section h2 {
+			font-size: 2.5rem;
+			margin-bottom: 0.5rem;
+			font-weight: 300;
+			font-style: italic;
+		}
+
+		.cta-section h3 {
+			font-size: 2rem;
+			margin-bottom: 2rem;
+			font-weight: 300;
+			font-style: italic;
 		}
 
 		/* Footer */
 		footer {
-			background-color: #2c3e50;
-			color: white;
-			padding: 2rem 0;
-			text-align: center;
-			margin-top: 3rem;
+			background-color: var(--color-primary);
+			color: var(--color-text-light);
+			padding: 3rem 0 0;
 		}
 
 		.footer-content {
 			max-width: 1200px;
 			margin: 0 auto;
 			padding: 0 2rem;
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 3rem;
+			align-items: center;
+			text-align: center;
 		}
 
-		footer a {
-			color: #3498db;
+		.footer-section p {
+			margin-bottom: 0.5rem;
+		}
+
+		.social-links {
+			display: flex;
+			gap: 2rem;
+			justify-content: center;
+		}
+
+		.social-link {
+			color: var(--color-text-light);
 			text-decoration: none;
+			font-size: 1.2rem;
+			transition: opacity 0.3s;
 		}
 
-		footer a:hover {
-			text-decoration: underline;
+		.social-link:hover {
+			opacity: 0.8;
+		}
+
+		.footer-logo {
+			height: 80px;
+			width: auto;
+		}
+
+		.footer-bottom {
+			background-color: var(--color-secondary);
+			color: var(--color-text-primary);
+			padding: 1rem 0;
+			margin-top: 2rem;
+		}
+
+		.footer-bottom .container {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.footer-links a {
+			color: var(--color-text-primary);
+			text-decoration: none;
+			transition: opacity 0.3s;
+		}
+
+		.footer-links a:hover {
+			opacity: 0.7;
 		}
 
 		/* Responsive design */
 		@media (max-width: 768px) {
-			.nav-container {
+			.nav-menu {
 				flex-direction: column;
 				gap: 1rem;
 			}
 
-			nav ul {
-				gap: 1rem;
-			}
-
-			h1 {
+			.hero-content h1 {
 				font-size: 2rem;
 			}
 
-			.container {
-				padding: 1rem;
+			.philosophy-content {
+				grid-template-columns: 1fr;
 			}
 
-			.content {
-				padding: 1rem;
+			.benefits-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.footer-content {
+				grid-template-columns: 1fr;
+				gap: 2rem;
+			}
+
+			.footer-bottom .container {
+				flex-direction: column;
+				gap: 1rem;
+				text-align: center;
 			}
 		}
 	`
